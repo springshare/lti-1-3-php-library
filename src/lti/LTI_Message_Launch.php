@@ -236,7 +236,7 @@ class LTI_Message_Launch
 
         // Find key used to sign the JWT (matches the KID in the header)
         foreach ($public_key_set['keys'] as $key) {
-            if ($key['kid'] == $this->jwt['header']['kid']) {
+            if (isset($this->jwt['header']['kid']) && $key['kid'] == $this->jwt['header']['kid']) {
                 try {
                     return openssl_pkey_get_details(
                         JWK::parseKeySet([
@@ -333,7 +333,6 @@ class LTI_Message_Launch
         try {
             JWT::decode($this->request['id_token'], $public_key['key'], array('RS256'));
         } catch (\Exception $e) {
-            var_dump($e);
             // Error validating signature.
             throw new LTI_Exception("Invalid signature on id_token", 1);
         }
@@ -344,8 +343,10 @@ class LTI_Message_Launch
     private function validate_deployment()
     {
         // Find deployment.
-        $deployment = $this->db->find_deployment($this->jwt['body']['iss'],
-            $this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/deployment_id']);
+        $deployment = $this->db->find_deployment(
+            ($this->jwt['body']['iss'] ?? ''),
+            ($this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/deployment_id'] ?? '')
+        );
 
         if (empty($deployment)) {
             // deployment not recognized.
