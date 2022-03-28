@@ -1,14 +1,20 @@
 <?php
 namespace IMSGlobal\LTI;
 
-class Resource_Message_Validator implements Message_Validator {
-    public function can_validate($jwt_body) {
+class Resource_Message_Validator implements Message_Validator
+{
+    public function can_validate($jwt_body)
+    {
         return $jwt_body['https://purl.imsglobal.org/spec/lti/claim/message_type'] === 'LtiResourceLinkRequest';
     }
 
-    public function validate($jwt_body) {
+    public function validate($jwt_body)
+    {
         if (empty($jwt_body['sub'])) {
             throw new LTI_Exception('Must have a user (sub)');
+        }
+        if (!isset($jwt_body['https://purl.imsglobal.org/spec/lti/claim/version'])) {
+            throw new LTI_Exception('Missing Version Claim');
         }
         if ($jwt_body['https://purl.imsglobal.org/spec/lti/claim/version'] !== '1.3.0') {
             throw new LTI_Exception('Incorrect version, expected 1.3.0');
@@ -23,4 +29,5 @@ class Resource_Message_Validator implements Message_Validator {
         return true;
     }
 }
+
 ?>
