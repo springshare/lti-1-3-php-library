@@ -261,33 +261,39 @@ class LTI_Message_Launch
 
     private function validate_state()
     {
-        // Check State for OIDC.
+        // Error if state is missing from request
+        if (empty($this->request['state'])) {
+            throw new LTI_Exception("Missing state", 1);
+        }
+
+        // Error if state is missing from cookie
+        if (empty($this->cookie->get_cookie('lti1p3_' . $this->request['state']))) {
+            throw new LTI_Exception("Missing state cookie", 1);
+        }
+
+        // Error if state doesn't match cookie
         if ($this->cookie->get_cookie('lti1p3_' . $this->request['state']) !== $this->request['state']) {
-            // Error if state doesn't match
-            throw new LTI_Exception("State not found", 1);
+            throw new LTI_Exception("Invalid state", 1);
         }
         return $this;
     }
 
     private function validate_jwt_format()
     {
-        $jwt = $this->request['id_token'];
-
+        // Get id_token; throw exception on missing / empty value.
+        $jwt = ($this->request['id_token'] ?? null);
         if (empty($jwt)) {
             throw new LTI_Exception("Missing id_token", 1);
         }
 
-        // Get parts of JWT.
+        // Get parts of JWT; throw exception on invalid number of parts.
         $jwt_parts = explode('.', $jwt);
-
         if (count($jwt_parts) !== 3) {
-            // Invalid number of parts in JWT.
             throw new LTI_Exception("Invalid id_token, JWT must contain 3 parts", 1);
         }
 
-        // Decode JWT headers.
+        // Decode JWT headers and body
         $this->jwt['header'] = json_decode(JWT::urlsafeB64Decode($jwt_parts[0]), true);
-        // Decode JWT Body.
         $this->jwt['body'] = json_decode(JWT::urlsafeB64Decode($jwt_parts[1]), true);
 
         return $this;
