@@ -94,6 +94,32 @@ class LTI_Message_Launch
     }
 
     /**
+     * Same as "validate" but skips the state check.  This is less secure than "validate" but it allows the launch to
+     * work when 3rd party cookies are blocked.
+     *
+     * @param array|string $request An array of post request parameters. If not set will default to $_POST.
+     *
+     * @return LTI_Message_Launch   Will return $this if validation is successful.
+     * @throws LTI_Exception        Will throw an LTI_Exception if validation fails.
+     */
+    public function validate_no_state(array $request = null)
+    {
+
+        if ($request === null) {
+            $request = $_POST;
+        }
+        $this->request = $request;
+
+        return $this->validate_jwt_format()
+            ->validate_nonce()
+            ->validate_registration()
+            ->validate_jwt_signature()
+            ->validate_deployment()
+            ->validate_message()
+            ->cache_launch_data();
+    }
+
+    /**
      * Returns whether or not the current launch can use the names and roles service.
      *
      * @return boolean  Returns a boolean indicating the availability of names and roles.
@@ -270,7 +296,7 @@ class LTI_Message_Launch
         if (empty($this->cookie->get_cookie('lti1p3_' . $this->request['state']))) {
             throw new LTI_Exception("Missing state cookie", 1);
         }
-        
+
         // Error if state doesn't match cookie
         if ($this->cookie->get_cookie('lti1p3_' . $this->request['state']) !== $this->request['state']) {
             throw new LTI_Exception("Invalid state", 1);
