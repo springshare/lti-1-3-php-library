@@ -70,50 +70,18 @@ class LTI_Message_Launch
     /**
      * Validates all aspects of an incoming LTI message launch and caches the launch if successful.
      *
-     * @param array|string $request An array of post request parameters. If not set will default to $_POST.
-     *
      * @return LTI_Message_Launch   Will return $this if validation is successful.
-     * @throws LTI_Exception        Will throw an LTI_Exception if validation fails.
+     * @throws LTI_Exception Will throw an LTI_Exception if validation fails.
      */
-    public function validate(array $request = null)
+    public function validate(bool $skip_state = false, bool $allow_self_signed = false)
     {
+        $this->request = $_POST;
 
-        if ($request === null) {
-            $request = $_POST;
-        }
-        $this->request = $request;
-
-        return $this->validate_state()
+        return $this->validate_state($skip_state)
             ->validate_jwt_format()
             ->validate_nonce()
             ->validate_registration()
-            ->validate_jwt_signature()
-            ->validate_deployment()
-            ->validate_message()
-            ->cache_launch_data();
-    }
-
-    /**
-     * Same as "validate" but skips the state check.  This is less secure than "validate" but it allows the launch to
-     * work when 3rd party cookies are blocked.
-     *
-     * @param array|string $request An array of post request parameters. If not set will default to $_POST.
-     *
-     * @return LTI_Message_Launch   Will return $this if validation is successful.
-     * @throws LTI_Exception        Will throw an LTI_Exception if validation fails.
-     */
-    public function validate_no_state(array $request = null)
-    {
-
-        if ($request === null) {
-            $request = $_POST;
-        }
-        $this->request = $request;
-
-        return $this->validate_jwt_format()
-            ->validate_nonce()
-            ->validate_registration()
-            ->validate_jwt_signature()
+            ->validate_jwt_signature($allow_self_signed)
             ->validate_deployment()
             ->validate_message()
             ->cache_launch_data();
@@ -248,12 +216,23 @@ class LTI_Message_Launch
         return $this->launch_id;
     }
 
-    private function get_public_key()
+    private function get_public_key(bool $allow_self_signed = false)
     {
         $key_set_url = $this->registration->get_key_set_url();
 
         // Download key set
-        $public_key_set = json_decode(file_get_contents($key_set_url), true);
+        $public_key_set = json_decode(
+            file_get_contents(
+                $key_set_url,
+                false,
+                stream_context_create([
+                    "ssl" => [
+                        "allow_self_signed" => $allow_self_signed     // verify_peer => false will also work here
+                    ]
+                ])
+            ),
+            true
+        );
 
         if (empty($public_key_set)) {
             // Failed to fetch public keyset from URL.
@@ -285,8 +264,13 @@ class LTI_Message_Launch
         return $this;
     }
 
-    private function validate_state()
+    private function validate_state(bool $skip_state = false)
     {
+        // State check bypass
+        if ($skip_state) {
+            return $this;
+        }
+
         // Error if state is missing from request
         if (empty($this->request['state'])) {
             throw new LTI_Exception("Missing state", 1);
@@ -356,10 +340,10 @@ class LTI_Message_Launch
         return $this;
     }
 
-    private function validate_jwt_signature()
+    private function validate_jwt_signature(bool $allow_self_signed = false)
     {
         // Fetch public key.
-        $public_key = $this->get_public_key();
+        $public_key = $this->get_public_key($allow_self_signed);
 
         // Validate JWT signature
         try {
