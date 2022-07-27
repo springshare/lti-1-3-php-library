@@ -222,7 +222,7 @@ class LTI_Message_Launch
 
         // Download key set
         $public_key_set = json_decode(
-            file_get_contents(
+            @file_get_contents(
                 $key_set_url,
                 false,
                 stream_context_create([
