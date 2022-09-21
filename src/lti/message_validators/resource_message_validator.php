@@ -10,9 +10,6 @@ class Resource_Message_Validator implements Message_Validator
 
     public function validate($jwt_body)
     {
-        if (empty($jwt_body['sub'])) {
-            throw new LTI_Exception('Must have a user (sub)');
-        }
         if (!isset($jwt_body['https://purl.imsglobal.org/spec/lti/claim/version'])) {
             throw new LTI_Exception('Missing Version Claim');
         }
@@ -21,6 +18,11 @@ class Resource_Message_Validator implements Message_Validator
         }
         if (!isset($jwt_body['https://purl.imsglobal.org/spec/lti/claim/roles'])) {
             throw new LTI_Exception('Missing Roles Claim');
+        }
+        # allow missing sub only for anonymous launches per https://www.imsglobal.org/spec/lti/v1p3#user-identity-claims
+        if (empty($jwt_body['sub']) && !in_array('http://purl.imsglobal.org/vocab/lis/v2/system/person#None',$jwt_body['https://purl.imsglobal.org/spec/lti/claim/roles'])) {
+            die($jwt_body['https://purl.imsglobal.org/spec/lti/claim/roles']);
+            throw new LTI_Exception('Must have a user (sub)');
         }
         if (empty($jwt_body['https://purl.imsglobal.org/spec/lti/claim/resource_link']['id'])) {
             throw new LTI_Exception('Missing Resource Link Id');
