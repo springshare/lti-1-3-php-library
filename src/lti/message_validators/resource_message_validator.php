@@ -21,7 +21,6 @@ class Resource_Message_Validator implements Message_Validator
         }
         # allow missing sub only for anonymous launches per https://www.imsglobal.org/spec/lti/v1p3#user-identity-claims
         if (empty($jwt_body['sub']) && !in_array('http://purl.imsglobal.org/vocab/lis/v2/system/person#None',$jwt_body['https://purl.imsglobal.org/spec/lti/claim/roles'])) {
-            die($jwt_body['https://purl.imsglobal.org/spec/lti/claim/roles']);
             throw new LTI_Exception('Must have a user (sub)');
         }
         if (empty($jwt_body['https://purl.imsglobal.org/spec/lti/claim/resource_link']['id'])) {
