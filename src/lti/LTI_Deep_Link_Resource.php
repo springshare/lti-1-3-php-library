@@ -8,6 +8,7 @@ class LTI_Deep_Link_Resource {
     private $url;
     private $lineitem;
     private $custom_params = [];
+    private $iframe = [];
     private $target = 'iframe';
 
     public static function new() {
@@ -59,6 +60,15 @@ class LTI_Deep_Link_Resource {
         return $this;
     }
 
+    public function get_iframe() {
+        return $this->iframe;
+    }
+
+    public function set_iframe($value) {
+        $this->iframe = $value;
+        return $this;
+    }
+
     public function get_target() {
         return $this->target;
     }
@@ -77,6 +87,7 @@ class LTI_Deep_Link_Resource {
                 "documentTarget" => $this->target,
             ],
             "custom" => $this->custom_params,
+            "iframe" => $this->iframe,
         ];
         if ($this->lineitem !== null) {
             $resource["lineItem"] = [
