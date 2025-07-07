@@ -1,7 +1,8 @@
-vendor
-composer.phar
-composer.lock
-src/game_example/db/keys/*
-src/game_example/db/configs/local.json
-.env
 .DS_Store
+.env
+.idea
+composer.lock
+composer.phar
+src/game_example/db/configs/local.json
+src/game_example/db/keys/*
+vendor
