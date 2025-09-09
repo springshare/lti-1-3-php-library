@@ -41,6 +41,14 @@ class LTI_Message_Launch
         $this->cookie = $cookie;
     }
 
+    public function set_launch_id(string $launch_id) {
+        $this->launch_id = $launch_id;
+    }
+
+    public function set_jwt(string $launch_data) {
+        $this->jwt = ['body' => $launch_data];
+    }
+
     /**
      * Static function to allow for method chaining without having to assign to a variable first.
      */
