@@ -71,11 +71,11 @@ class LTI_Message_Launch
      * @return LTI_Message_Launch   A populated and validated LTI_Message_Launch.
      * @throws LTI_Exception        Will throw an LTI_Exception if validation fails or launch cannot be found.
      */
-    public static function from_cache($launch_id, Database $database, Cache $cache = null, string $launch_data=null)
+    public static function from_cache($launch_id, Database $database, Cache $cache = null, $launch_data = null)
     {
         $new = new LTI_Message_Launch($database, $cache, null);
         $new->launch_id = $launch_id;
-        $new->jwt = ['body' => ($launch_data??$new->cache->get_launch_data($launch_id))];
+        $new->jwt = ['body' => ($launch_data ?? $new->cache->get_launch_data($launch_id))];
         return $new->validate_registration();
     }
 
