@@ -49,6 +49,10 @@ class LTI_Message_Launch
         $this->jwt = ['body' => $launch_data];
     }
 
+    public function get_jwt_body():string {
+        return $this->jwt['body'] ?? '';
+    }
+
     /**
      * Static function to allow for method chaining without having to assign to a variable first.
      */
