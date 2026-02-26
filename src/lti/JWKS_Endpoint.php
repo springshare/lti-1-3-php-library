@@ -47,7 +47,7 @@ class JWKS_Endpoint {
                     'kid' => $kid,
                 );
                 $jwks[] = $components;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Skip keys that fail to load
                 continue;
             }
