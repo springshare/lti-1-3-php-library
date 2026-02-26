@@ -1,7 +1,9 @@
 <?php
 namespace IMSGlobal\LTI;
 
-use phpseclib\Crypt\RSA;
+use phpseclib3\Crypt\RSA;
+use phpseclib3\Common\Functions\Strings;
+use \Exception;
 use \Firebase\JWT\JWT;
 
 class JWKS_Endpoint {
@@ -28,22 +30,27 @@ class JWKS_Endpoint {
     public function get_public_jwks() {
         $jwks = [];
         foreach ($this->keys as $kid => $private_key) {
-            $key = new RSA();
-            $key->setHash("sha256");
-            $key->loadKey($private_key);
-            $key->setPublicKey(false, RSA::PUBLIC_FORMAT_PKCS8);
-            if ( !$key->publicExponent ) {
+            try {
+                // Load private key and get the public key
+                $key = RSA::load($private_key);
+                $public_key = $key->getPublicKey();
+
+                // Extract modulus and exponent using Raw format
+                $key_components = $public_key->toString('raw');
+
+                $components = array(
+                    'kty' => 'RSA',
+                    'alg' => 'RS256',
+                    'use' => 'sig',
+                    'e' => Strings::base64url_encode($key_components['e']->toBytes()),
+                    'n' => Strings::base64url_encode($key_components['n']->toBytes()),
+                    'kid' => $kid,
+                );
+                $jwks[] = $components;
+            } catch (Exception $e) {
+                // Skip keys that fail to load
                 continue;
             }
-            $components = array(
-                'kty' => 'RSA',
-                'alg' => 'RS256',
-                'use' => 'sig',
-                'e' => JWT::urlsafeB64Encode($key->publicExponent->toBytes()),
-                'n' => JWT::urlsafeB64Encode($key->modulus->toBytes()),
-                'kid' => $kid,
-            );
-            $jwks[] = $components;
         }
         return ['keys' => $jwks];
     }
