@@ -3,6 +3,7 @@ namespace IMSGlobal\LTI;
 
 use phpseclib3\Crypt\RSA;
 use phpseclib3\Common\Functions\Strings;
+use \Exception;
 use \Firebase\JWT\JWT;
 
 class JWKS_Endpoint {
