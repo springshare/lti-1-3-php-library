@@ -243,11 +243,13 @@ class LTI_Message_Launch
         foreach ($public_key_set['keys'] as $key) {
             if (isset($this->jwt['header']['kid']) && $key['kid'] == $this->jwt['header']['kid']) {
                 try {
-                    return openssl_pkey_get_details(
-                        JWK::parseKeySet([
-                            'keys' => [$key]
-                        ])[$key['kid']]
-                    );
+                    $parsedKeys = JWK::parseKeySet([
+                        'keys' => [$key]
+                    ]);
+                    $parsedKey = $parsedKeys[$key['kid']];
+
+                    // Return the Key object directly for firebase/php-jwt v7.x
+                    return $parsedKey;
                 } catch (\Exception $e) {
                     return false;
                 }
@@ -345,9 +347,13 @@ class LTI_Message_Launch
         // Fetch public key.
         $public_key = $this->get_public_key($allow_self_signed);
 
-        // Validate JWT signature
+        if ($public_key === false) {
+            throw new LTI_Exception("Invalid signature on id_token", 1);
+        }
+
+        // Validate JWT signature using firebase/php-jwt v7.x API
         try {
-            JWT::decode($this->request['id_token'], $public_key['key'], array('RS256'));
+            JWT::decode($this->request['id_token'], $public_key);
         } catch (\Exception $e) {
             // Error validating signature.
             throw new LTI_Exception("Invalid signature on id_token", 1);
