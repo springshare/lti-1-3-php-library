@@ -220,6 +220,7 @@ class LTI_Message_Launch
     {
         $key_set_url = $this->registration->get_key_set_url();
 
+
         // Download key set
         $public_key_set = json_decode(
             @file_get_contents(
@@ -236,6 +237,7 @@ class LTI_Message_Launch
 
         if (empty($public_key_set)) {
             // Failed to fetch public keyset from URL.
+            error_log("LTI: Failed to fetch JWKS from: " . $key_set_url);
             throw new LTI_Exception("Failed to fetch public key", 1);
         }
 
@@ -243,6 +245,11 @@ class LTI_Message_Launch
         foreach ($public_key_set['keys'] as $key) {
             if (isset($this->jwt['header']['kid']) && $key['kid'] == $this->jwt['header']['kid']) {
                 try {
+                    // Some LMS (like D2L) don't include "alg" in their JWKS, so add it from the JWT header
+                    if (!isset($key['alg']) && isset($this->jwt['header']['alg'])) {
+                        $key['alg'] = $this->jwt['header']['alg'];
+                    }
+
                     $parsedKeys = JWK::parseKeySet([
                         'keys' => [$key]
                     ]);
@@ -251,12 +258,14 @@ class LTI_Message_Launch
                     // Return the Key object directly for firebase/php-jwt v7.x
                     return $parsedKey;
                 } catch (\Exception $e) {
+                    error_log("LTI: Failed to parse key (kid=" . ($key['kid'] ?? 'N/A') . "): " . $e->getMessage());
                     return false;
                 }
             }
         }
 
         // Could not find public key with a matching kid and alg.
+        error_log("LTI: No matching kid found in JWKS. Looking for: " . ($this->jwt['header']['kid'] ?? 'N/A'));
         throw new LTI_Exception("Unable to find public key", 1);
     }
 
@@ -295,6 +304,8 @@ class LTI_Message_Launch
         // Get id_token; throw exception on missing / empty value.
         $jwt = ($this->request['id_token'] ?? null);
         if (empty($jwt)) {
+            error_log("=== JWT Validation Debug ===");
+            error_log('$this->request='.json_encode($this->request));
             throw new LTI_Exception("Missing id_token", 1);
         }
 
@@ -356,6 +367,7 @@ class LTI_Message_Launch
             JWT::decode($this->request['id_token'], $public_key);
         } catch (\Exception $e) {
             // Error validating signature.
+            error_log("LTI: JWT signature validation failed: " . $e->getMessage());
             throw new LTI_Exception("Invalid signature on id_token", 1);
         }
 
