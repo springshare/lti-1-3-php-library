@@ -52,6 +52,7 @@ class LTI_Service_Connector {
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($auth_request));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, LTI_USER_AGENT);
         $resp = curl_exec($ch);
         $token_data = json_decode($resp, true);
         curl_close ($ch);
