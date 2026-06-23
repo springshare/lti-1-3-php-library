@@ -230,7 +230,7 @@ class LTI_Message_Launch
                         "allow_self_signed" => $allow_self_signed     // verify_peer => false will also work here
                     ],
                     "http" => [
-                        "user_agent" => LTI_USER_AGENT
+                        "user_agent" => "LTI-1-3-PHP-Library"
                     ]
                 ])
             ),

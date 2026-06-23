@@ -4,6 +4,5 @@ foreach (glob(__DIR__ . "/*.php") as $filename) {
     require_once $filename;
 }
 define("TOOL_HOST", ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?: $_SERVER['REQUEST_SCHEME']) . '://' . $_SERVER['HTTP_HOST']);
-define("LTI_USER_AGENT", "LTI-1-3-PHP-Library");
 Firebase\JWT\JWT::$leeway = 5;
 ?>
