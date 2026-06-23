@@ -3,10 +3,6 @@ namespace IMSGlobal\LTI;
 
 use Firebase\JWT\JWT;
 
-if (!defined('IMSGlobal\LTI\LTI_USER_AGENT')) {
-    define('IMSGlobal\LTI\LTI_USER_AGENT', 'LTI-1-3-PHP-Library');
-}
-
 class LTI_Service_Connector {
 
     const NEXT_PAGE_REGEX = "/^Link:.*<([^>]*)>; ?rel=\"next\"/i";
@@ -56,7 +52,7 @@ class LTI_Service_Connector {
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($auth_request));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_USERAGENT, LTI_USER_AGENT);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'LTI-1-3-PHP-Library');
         $resp = curl_exec($ch);
         $token_data = json_decode($resp, true);
         curl_close ($ch);
