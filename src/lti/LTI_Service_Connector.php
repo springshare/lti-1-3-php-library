@@ -3,6 +3,10 @@ namespace IMSGlobal\LTI;
 
 use Firebase\JWT\JWT;
 
+if (!defined('IMSGlobal\LTI\LTI_USER_AGENT')) {
+    define('IMSGlobal\LTI\LTI_USER_AGENT', 'LTI-1-3-PHP-Library');
+}
+
 class LTI_Service_Connector {
 
     const NEXT_PAGE_REGEX = "/^Link:.*<([^>]*)>; ?rel=\"next\"/i";
