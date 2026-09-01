@@ -1,38 +1,41 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
 class Redirect {
 
-    private $location;
-    private $referer_query;
-    private static $CAN_302_COOKIE = 'LTI1p3_302_Redirect';
+    private string $location;
+    private ?string $referer_query;
+    private static string $CAN_302_COOKIE = 'LTI1p3_302_Redirect';
 
-    public function __construct($location, $referer_query = null) {
+    public function __construct(string $location, ?string $referer_query = null) {
         $this->location = $location;
         $this->referer_query = $referer_query;
     }
 
-    public function do_redirect() {
+    public function do_redirect(): void {
         header('Location: ' . $this->location, true, 302);
         die;
     }
 
-    public function do_hybrid_redirect(Cookie $cookie = null) {
-        if ($cookie == null) {
+    public function do_hybrid_redirect(?Cookie $cookie = null): void {
+        if ($cookie === null) {
             $cookie = new Cookie();
         }
         if (!empty($cookie->get_cookie(self::$CAN_302_COOKIE))) {
-            return $this->do_redirect();
+            $this->do_redirect();
+            return;
         }
         $cookie->set_cookie(self::$CAN_302_COOKIE, "true");
         $this->do_js_redirect();
     }
 
-    public function get_redirect_url() {
+    public function get_redirect_url(): string {
         return $this->location;
     }
 
-    public function do_js_redirect() {
+    public function do_js_redirect(): void {
         ?>
         <a id="try-again" target="_blank">If you are not automatically redirected, click here to continue</a>
         <script>

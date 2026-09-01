@@ -1,20 +1,23 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
-use \Firebase\JWT\JWT;
+use Firebase\JWT\JWT;
+
 class LTI_Deep_Link {
 
-    private $registration;
-    private $deployment_id;
-    private $deep_link_settings;
+    private LTI_Registration $registration;
+    private string $deployment_id;
+    private array $deep_link_settings;
 
-    public function __construct($registration, $deployment_id, $deep_link_settings) {
+    public function __construct(LTI_Registration $registration, string $deployment_id, array $deep_link_settings) {
         $this->registration = $registration;
         $this->deployment_id = $deployment_id;
         $this->deep_link_settings = $deep_link_settings;
     }
 
-    public function get_response_jwt($resources) {
+    public function get_response_jwt(array $resources): string {
         $message_jwt = [
             "iss" => $this->registration->get_client_id(),
             "aud" => [$this->registration->get_issuer()],
@@ -30,7 +33,7 @@ class LTI_Deep_Link {
         return JWT::encode($message_jwt, $this->registration->get_tool_private_key(), 'RS256', $this->registration->get_kid());
     }
 
-    public function output_response_form($resources) {
+    public function output_response_form(array $resources): void {
         $jwt = $this->get_response_jwt($resources);
         ?>
         <form id="auto_submit" action="<?= $this->deep_link_settings['deep_link_return_url']; ?>" method="POST">

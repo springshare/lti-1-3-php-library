@@ -1,20 +1,15 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
 class LTI_OIDC_Login {
 
-    private $db;
-    private $cache;
-    private $cookie;
+    private Database $db;
+    private Cache $cache;
+    private Cookie $cookie;
 
-    /**
-     * Constructor
-     *
-     * @param Database  $database   Instance of the database interface used for looking up registrations and deployments.
-     * @param Cache     $cache      Instance of the Cache interface used to loading and storing launches. If non is provided launch data will be store in $_SESSION.
-     * @param Cookie    $cookie     Instance of the Cookie interface used to set and read cookies. Will default to using $_COOKIE and setcookie.
-     */
-    function __construct(Database $database, Cache $cache = null, Cookie $cookie = null) {
+    public function __construct(Database $database, ?Cache $cache = null, ?Cookie $cookie = null) {
         $this->db = $database;
         if ($cache === null) {
             $cache = new Cache();
@@ -27,22 +22,11 @@ class LTI_OIDC_Login {
         $this->cookie = $cookie;
     }
 
-    /**
-     * Static function to allow for method chaining without having to assign to a variable first.
-     */
-    public static function new(Database $database, Cache $cache = null, Cookie $cookie = null) {
-        return new LTI_OIDC_Login($database, $cache, $cookie);
+    public static function new(Database $database, ?Cache $cache = null, ?Cookie $cookie = null): self {
+        return new self($database, $cache, $cookie);
     }
 
-    /**
-     * Calculate the redirect location to return to based on an OIDC third party initiated login request.
-     *
-     * @param string        $launch_url URL to redirect back to after the OIDC login. This URL must match exactly a URL white listed in the platform.
-     * @param array|string  $request    An array of request parameters. If not set will default to $_REQUEST.
-     *
-     * @return Redirect Returns a redirect object containing the fully formed OIDC login URL.
-     */
-    public function do_oidc_login_redirect($launch_url, array $request = null) {
+    public function do_oidc_login_redirect(string $launch_url, ?array $request = null): Redirect {
 
         if ($request === null) {
             $request = $_REQUEST;
@@ -94,7 +78,7 @@ class LTI_OIDC_Login {
 
     }
 
-    protected function validate_oidc_login($request) {
+    protected function validate_oidc_login(array $request): LTI_Registration {
 
         // Validate Issuer.
         if (empty($request['iss'])) {
@@ -107,7 +91,7 @@ class LTI_OIDC_Login {
         }
 
         // Fetch Registration Details.
-        $registration = $this->db->find_registration_by_issuer($request['iss']);
+        $registration = $this->db->find_registration_by_issuer((string)$request['iss']);
 
         // Check we got something.
         if (empty($registration)) {

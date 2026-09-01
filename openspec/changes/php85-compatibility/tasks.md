@@ -1,29 +1,29 @@
 ## 1. Audit libapps2 and Setup
 
-- [ ] 1.1 Audit libapps2 codebase: identify all calls to this library's public methods and document parameter types passed (especially numeric strings vs ints)
-- [ ] 1.2 Create a summary document of libapps2 usage patterns for reference during type hint decisions
-- [ ] 1.3 Update composer.json to declare minimum PHP 8.0 requirement and verify `composer validate` passes
-- [ ] 1.4 Create a PHP script to audit all files for deprecated functions and missing type hints, identify files needing changes
+- [x] 1.1 Audit libapps2 codebase: identify all calls to this library's public methods and document parameter types passed (especially numeric strings vs ints)
+- [x] 1.2 Create a summary document of libapps2 usage patterns for reference during type hint decisions
+- [x] 1.3 Update composer.json to declare minimum PHP 8.0 requirement and verify `composer validate` passes
+- [x] 1.4 Create a PHP script to audit all files for deprecated functions and missing type hints, identify files needing changes
 
 ## 2. Interfaces and Base Classes
 
-- [ ] 2.1 Add strict type declarations and complete type hints to `Database.php` (interface) and verify no syntax errors
-- [ ] 2.2 Add strict type declarations and complete type hints to `Message_Validator.php` (interface) and verify no syntax errors
-- [ ] 2.3 Add strict type declarations and complete type hints to `Cache.php` (interface) and verify no syntax errors
-- [ ] 2.4 Add strict type declarations and complete type hints to `Cookie.php` (interface) and verify no syntax errors
+- [x] 2.1 Add strict type declarations and complete type hints to `Database.php` (interface) and verify no syntax errors
+- [x] 2.2 Add strict type declarations and complete type hints to `Message_Validator.php` (interface) and verify no syntax errors
+- [x] 2.3 Add strict type declarations and complete type hints to `Cache.php` (interface) and verify no syntax errors
+- [x] 2.4 Add strict type declarations and complete type hints to `Cookie.php` (interface) and verify no syntax errors
 
 ## 3. Exception Classes
 
-- [ ] 3.1 Add strict type declarations and complete type hints to `LTI_Exception.php` and verify no syntax errors
-- [ ] 3.2 Add strict type declarations and complete type hints to `OIDC_Exception.php` and verify no syntax errors
+- [x] 3.1 Add strict type declarations and complete type hints to `LTI_Exception.php` and verify no syntax errors
+- [x] 3.2 Add strict type declarations and complete type hints to `OIDC_Exception.php` and verify no syntax errors
 
 ## 4. Core LTI Classes
 
-- [ ] 4.1 Add strict type declarations and complete type hints to `LTI_Registration.php` and verify no syntax errors
-- [ ] 4.2 Add strict type declarations and complete type hints to `LTI_Deployment.php` and verify no syntax errors
-- [ ] 4.3 Add strict type declarations and complete type hints to `JWKS_Endpoint.php` and verify no syntax errors
-- [ ] 4.4 Add strict type declarations and complete type hints to `LTI_OIDC_Login.php` and verify no syntax errors
-- [ ] 4.5 Add strict type declarations and complete type hints to `Redirect.php` and verify no syntax errors
+- [x] 4.1 Add strict type declarations and complete type hints to `LTI_Registration.php` and verify no syntax errors
+- [x] 4.2 Add strict type declarations and complete type hints to `LTI_Deployment.php` and verify no syntax errors
+- [x] 4.3 Add strict type declarations and complete type hints to `JWKS_Endpoint.php` and verify no syntax errors
+- [x] 4.4 Add strict type declarations and complete type hints to `LTI_OIDC_Login.php` and verify no syntax errors
+- [x] 4.5 Add strict type declarations and complete type hints to `Redirect.php` and verify no syntax errors
 
 ## 5. Main Message Launch and Service Classes
 
