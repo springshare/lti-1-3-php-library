@@ -1,7 +1,9 @@
-## 1. Setup and Audit
+## 1. Audit libapps2 and Setup
 
-- [ ] 1.1 Update composer.json to declare minimum PHP 8.0 requirement and verify `composer validate` passes
-- [ ] 1.2 Create a PHP script to audit all files for deprecated functions and missing type hints, identify files needing changes
+- [ ] 1.1 Audit libapps2 codebase: identify all calls to this library's public methods and document parameter types passed (especially numeric strings vs ints)
+- [ ] 1.2 Create a summary document of libapps2 usage patterns for reference during type hint decisions
+- [ ] 1.3 Update composer.json to declare minimum PHP 8.0 requirement and verify `composer validate` passes
+- [ ] 1.4 Create a PHP script to audit all files for deprecated functions and missing type hints, identify files needing changes
 
 ## 2. Interfaces and Base Classes
 
@@ -65,4 +67,11 @@
 
 - [ ] 11.1 Run a comprehensive PHP 8.5 compatibility check on the entire library with strict_types enabled
 - [ ] 11.2 Verify all public API methods maintain their original signatures and behavior
-- [ ] 11.3 Document any breaking changes or deprecation notices (should be minimal)
+- [ ] 11.3 Test with PHP 8.5 runtime to ensure no type errors occur
+
+## 12. libapps2 Integration Updates
+
+- [ ] 12.1 Identify any type mismatches between libapps2 calls and updated library type hints
+- [ ] 12.2 Update libapps2 code to pass correct types (add type casts where needed)
+- [ ] 12.3 Run integrated tests with both library and libapps2 together to verify compatibility
+- [ ] 12.4 Verify no type errors in strict mode when running through typical libapps2 workflows

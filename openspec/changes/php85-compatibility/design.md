@@ -7,6 +7,8 @@ The LTI library was created several years ago and uses older PHP patterns. It cu
 
 The dependencies (`firebase/php-jwt` and `phpseclib/phpseclib`) already support PHP 8.5, so this effort is focused on the library's own code.
 
+**Important**: This library is used only internally by Springshare. The sole consuming codebase is `libapps2`. This allows us to use strict type hints without breaking external clients—we can audit and update `libapps2` as needed to ensure compatibility.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -20,9 +22,10 @@ The dependencies (`firebase/php-jwt` and `phpseclib/phpseclib`) already support 
 **Non-Goals:**
 - Refactor code architecture or design patterns
 - Add new features or functionality
-- Break backward compatibility with existing code using the library
 - Update examples or external documentation (outside the library itself)
 - Modernize code style beyond what is required for PHP 8.5 compatibility (e.g., no reformatting for style alone)
+
+Note: Since this library is only used internally by libapps2, type hint changes will be audited against that codebase and updated as needed. We prioritize correct, strict types over false backward compatibility.
 
 ## Decisions
 
@@ -40,24 +43,25 @@ The dependencies (`firebase/php-jwt` and `phpseclib/phpseclib`) already support 
 - All-at-once approach: Would be faster but harder to debug if type errors appear
 - Dependency-order approach: Would be more complex since the library has interdependencies
 
-### Decision 2: Type hints - Use strict parameter and return types consistently
+### Decision 2: Type hints - Use strict, single-type hints where possible
 
-**Choice**: Use explicit scalar types (`int`, `string`, `bool`, `float`, `array`) and class types for all parameters and returns. Use `mixed` only when a value truly can be any type, `null` for nullable types, and union types where appropriate.
+**Choice**: Use explicit scalar types (`int`, `string`, `bool`, `float`, `array`) and class types for all parameters and returns. Use `mixed` only when a value truly can be any type, `null` for nullable types, and union types **only when the method legitimately handles multiple types**. Avoid union types simply to accommodate ambiguous calling patterns.
 
 **Rationale**:
-- Aligns with PHP 8 best practices
-- Provides IDE autocomplete and static analysis benefits
-- Makes code safer by catching type errors at runtime
+- Since libapps2 is the only consumer, we can audit and update calling code to match strict types
+- Strict single types catch errors early and improve IDE support
+- Makes code intent and contracts clearer
+- If `libapps2` passes the wrong type, we'll fix it there rather than weakening the contract here
 
 **Alternatives considered**:
-- Minimal changes with only method returns: Would provide less safety and IDE benefit
-- Omit `mixed` and use `|` for all unions: `mixed` is more explicit for true "any type" cases
+- Liberal use of union types for flexibility: Would weaken type safety without benefit since we can update callers
+- Maintain ambiguity with `mixed`: Would defeat the purpose of modernization
 
-### Decision 3: Interface modifications - Maintain backward compatibility
+### Decision 3: Interface modifications - Audit and update implementations
 
-**Choice**: When updating interface methods to add type hints, ensure client implementations remain compatible. Since adding type hints to interface methods can break implementations, we will be careful to use compatible types.
+**Choice**: Add strict type hints to interface methods. Any classes implementing these interfaces (only within this library and in libapps2) will be updated to match the new type hints.
 
-**Rationale**: Existing implementations of our interfaces must continue to work. In PHP, return type covariance and parameter type contravariance allow safe widening of types, but we must verify this.
+**Rationale**: Since libapps2 is the only external consumer, we can audit its implementations and update them to match strict types. This results in cleaner, safer code throughout the codebase.
 
 ### Decision 4: Deprecated function handling - Replace with modern equivalents
 
@@ -67,31 +71,32 @@ The dependencies (`firebase/php-jwt` and `phpseclib/phpseclib`) already support 
 
 ## Risks / Trade-offs
 
-**Risk 1: Third-party code that extends the library**
-→ **Mitigation**: We will maintain public method signatures to ensure subclasses continue to work. Any interface changes will be made carefully to not break Liskov Substitution Principle.
+**Risk 1: Ambiguous type hints in libapps2 calls**
+→ **Mitigation**: Audit libapps2 for all calls to this library. Where type mismatches exist (e.g., passing string instead of int), update the calling code in libapps2 to pass the correct type.
 
-**Risk 2: Array vs object type handling**
-→ **Mitigation**: Some methods may currently accept either arrays or objects. We will carefully review each case and use appropriate union types or separate methods as needed.
+**Risk 2: Legacy code patterns in this library**
+→ **Mitigation**: Where methods currently accept mixed or ambiguous types, we will determine the intended type from actual usage in libapps2 and implement strict types accordingly.
 
 **Risk 3: Performance impact from strict type checking**
 → **Mitigation**: Strict type checking has minimal performance impact in modern PHP. Benefits (safety, IDE support) outweigh costs.
 
-**Risk 4: Incomplete type information in legacy code**
-→ **Mitigation**: Where parameter or return types are unclear, we will review usage patterns in the code and tests to infer correct types. If ambiguous, we will use `mixed` temporarily with a note for manual verification.
+**Risk 4: Array vs object type handling**
+→ **Mitigation**: If methods accept both arrays and objects, audit libapps2 to see which is actually used. If only one is used, use that strict type. If both are legitimately needed, use a union type.
 
 ## Migration Plan
 
-1. **Audit Phase**: Scan all files to identify which need type hints and which use deprecated functions
-2. **Implementation Phase**: For each file:
+1. **Audit libapps2 Phase**: Scan libapps2 codebase to understand how it calls this library. Document type patterns for ambiguous parameters (e.g., does it pass strings or ints for numeric values?).
+2. **Audit Library Phase**: Scan all files in this library to identify which need type hints and which use deprecated functions.
+3. **Implementation Phase**: For each file in this library:
    - Add `declare(strict_types=1);` at the top
-   - Add missing type hints to all methods and functions
+   - Add type hints based on actual usage patterns in libapps2 (prefer strict types)
    - Replace deprecated functions
    - Verify no internal type conflicts
-3. **Validation Phase**: Run through code with PHP 8.5 parser to verify strict type compatibility
-4. **Testing Phase**: Run any existing tests to ensure behavior is unchanged
-5. **Deployment**: Update `composer.json` to declare PHP 8.0+ requirement
-6. **Documentation**: Update README if needed to reflect PHP version support
+4. **Validation Phase**: Run through code with PHP 8.5 parser to verify strict type compatibility
+5. **libapps2 Updates**: Fix any type mismatches in libapps2 calls (type casting where needed)
+6. **Testing Phase**: Test library + libapps2 together to ensure behavior is unchanged
+7. **Deployment**: Update `composer.json` to declare PHP 8.0+ requirement
 
 ## Open Questions
 
-- Should we also support PHP 8.0, 8.1, 8.2, 8.3, 8.4, or only 8.5+? (Assumption: 8.0+ is sufficient based on the request; can adjust if we discover breaking changes in specific versions)
+(None—the approach and strategy are clear. libapps2 audit will resolve any ambiguous type decisions before implementation.)
