@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 // Import all
 foreach (glob(__DIR__ . "/*.php") as $filename) {
     require_once $filename;

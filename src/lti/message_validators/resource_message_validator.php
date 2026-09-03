@@ -1,14 +1,16 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
 class Resource_Message_Validator implements Message_Validator
 {
-    public function can_validate($jwt_body)
+    public function can_validate(array $jwt_body): bool
     {
         return $jwt_body['https://purl.imsglobal.org/spec/lti/claim/message_type'] === 'LtiResourceLinkRequest';
     }
 
-    public function validate($jwt_body)
+    public function validate(array $jwt_body): bool
     {
         if (!isset($jwt_body['https://purl.imsglobal.org/spec/lti/claim/version'])) {
             throw new LTI_Exception('Missing Version Claim');

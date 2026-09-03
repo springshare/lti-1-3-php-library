@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
 use Firebase\JWT\JWK;
@@ -9,13 +11,13 @@ JWT::$leeway = 5;
 class LTI_Message_Launch
 {
 
-    private $db;
-    private $cache;
-    private $request;
-    private $cookie;
-    private $jwt;
-    private $registration;
-    private $launch_id;
+    private Database $db;
+    private Cache $cache;
+    private array $request = [];
+    private Cookie $cookie;
+    private array $jwt = [];
+    private ?LTI_Registration $registration = null;
+    private string $launch_id = "";
 
     /**
      * Constructor
@@ -24,8 +26,7 @@ class LTI_Message_Launch
      * @param Cache $cache Instance of the Cache interface used to loading and storing launches. If non is provided launch data will be store in $_SESSION.
      * @param Cookie $cookie Instance of the Cookie interface used to set and read cookies. Will default to using $_COOKIE and setcookie.
      */
-    function __construct(Database $database, Cache $cache = null, Cookie $cookie = null)
-    {
+    public function __construct(Database $database, ?Cache $cache = null, ?Cookie $cookie = null) {
         $this->db = $database;
 
         $this->launch_id = uniqid("lti1p3_launch_", true);
@@ -41,39 +42,18 @@ class LTI_Message_Launch
         $this->cookie = $cookie;
     }
 
-    /**
-     * Static function to allow for method chaining without having to assign to a variable first.
-     */
-    public static function new(Database $database, Cache $cache = null, Cookie $cookie = null)
-    {
-        return new LTI_Message_Launch($database, $cache, $cookie);
+    public static function new(Database $database, ?Cache $cache = null, ?Cookie $cookie = null): self {
+        return new self($database, $cache, $cookie);
     }
 
-    /**
-     * Load an LTI_Message_Launch from a Cache using a launch id.
-     *
-     * @param string $launch_id The launch id of the LTI_Message_Launch object that is being pulled from the cache.
-     * @param Database $database Instance of the database interface used for looking up registrations and deployments.
-     * @param Cache $cache Instance of the Cache interface used to loading and storing launches. If non is provided launch data will be store in $_SESSION.
-     *
-     * @return LTI_Message_Launch   A populated and validated LTI_Message_Launch.
-     * @throws LTI_Exception        Will throw an LTI_Exception if validation fails or launch cannot be found.
-     */
-    public static function from_cache($launch_id, Database $database, Cache $cache = null, $launch_data = null)
-    {
-        $new = new LTI_Message_Launch($database, $cache, null);
+    public static function from_cache(string $launch_id, Database $database, ?Cache $cache = null, mixed $launch_data = null): self {
+        $new = new self($database, $cache, null);
         $new->launch_id = $launch_id;
         $new->jwt = ['body' => ($launch_data ?? $new->cache->get_launch_data($launch_id))];
         return $new->validate_registration();
     }
 
-    /**
-     * Validates all aspects of an incoming LTI message launch and caches the launch if successful.
-     *
-     * @return LTI_Message_Launch   Will return $this if validation is successful.
-     * @throws LTI_Exception Will throw an LTI_Exception if validation fails.
-     */
-    public function validate(bool $skip_state = false, bool $allow_self_signed = false)
+    public function validate(bool $skip_state = false, bool $allow_self_signed = false): self
     {
         $this->request = $_POST;
 
@@ -87,137 +67,64 @@ class LTI_Message_Launch
             ->cache_launch_data();
     }
 
-    /**
-     * Returns whether or not the current launch can use the names and roles service.
-     *
-     * @return boolean  Returns a boolean indicating the availability of names and roles.
-     */
-    public function has_nrps()
-    {
+    public function has_nrps(): bool {
         return !empty($this->jwt['body']['https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice']['context_memberships_url']);
     }
 
-    /**
-     * Fetches an instance of the names and roles service for the current launch.
-     *
-     * @return LTI_Names_Roles_Provisioning_Service An instance of the names and roles service that can be used to make calls within the scope of the current launch.
-     */
-    public function get_nrps()
-    {
+    public function get_nrps(): LTI_Names_Roles_Provisioning_Service {
         return new LTI_Names_Roles_Provisioning_Service(
             new LTI_Service_Connector($this->registration),
             $this->jwt['body']['https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice']);
     }
 
-    /**
-     * Returns whether or not the current launch can use the groups service.
-     *
-     * @return boolean  Returns a boolean indicating the availability of groups.
-     */
-    public function has_gs()
-    {
+    public function has_gs(): bool {
         return !empty($this->jwt['body']['https://purl.imsglobal.org/spec/lti-gs/claim/groupsservice']['context_groups_url']);
     }
 
-    /**
-     * Fetches an instance of the groups service for the current launch.
-     *
-     * @return LTI_Course_Groups_Service An instance of the groups service that can be used to make calls within the scope of the current launch.
-     */
-    public function get_gs()
-    {
+    public function get_gs(): LTI_Course_Groups_Service {
         return new LTI_Course_Groups_Service(
             new LTI_Service_Connector($this->registration),
             $this->jwt['body']['https://purl.imsglobal.org/spec/lti-gs/claim/groupsservice']);
     }
 
-    /**
-     * Returns whether or not the current launch can use the assignments and grades service.
-     *
-     * @return boolean  Returns a boolean indicating the availability of assignments and grades.
-     */
-    public function has_ags()
-    {
+    public function has_ags(): bool {
         return !empty($this->jwt['body']['https://purl.imsglobal.org/spec/lti-ags/claim/endpoint']);
     }
 
-    /**
-     * Fetches an instance of the assignments and grades service for the current launch.
-     *
-     * @return LTI_Assignments_Grades_Service An instance of the assignments an grades service that can be used to make calls within the scope of the current launch.
-     */
-    public function get_ags()
-    {
+    public function get_ags(): LTI_Assignments_Grades_Service {
         return new LTI_Assignments_Grades_Service(
             new LTI_Service_Connector($this->registration),
             $this->jwt['body']['https://purl.imsglobal.org/spec/lti-ags/claim/endpoint']);
     }
 
-    /**
-     * Fetches a deep link that can be used to construct a deep linking response.
-     *
-     * @return LTI_Deep_Link An instance of a deep link to construct a deep linking response for the current launch.
-     */
-    public function get_deep_link()
-    {
+    public function get_deep_link(): LTI_Deep_Link {
         return new LTI_Deep_Link(
             $this->registration,
-            $this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/deployment_id'],
+            (string)$this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/deployment_id'],
             $this->jwt['body']['https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings']);
     }
 
-    /**
-     * Returns whether or not the current launch is a deep linking launch.
-     *
-     * @return boolean  Returns true if the current launch is a deep linking launch.
-     */
-    public function is_deep_link_launch()
-    {
+    public function is_deep_link_launch(): bool {
         return $this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/message_type'] === 'LtiDeepLinkingRequest';
     }
 
-    /**
-     * Returns whether or not the current launch is a submission review launch.
-     *
-     * @return boolean  Returns true if the current launch is a submission review launch.
-     */
-    public function is_submission_review_launch()
-    {
+    public function is_submission_review_launch(): bool {
         return $this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/message_type'] === 'LtiSubmissionReviewRequest';
     }
 
-    /**
-     * Returns whether or not the current launch is a resource launch.
-     *
-     * @return boolean  Returns true if the current launch is a resource launch.
-     */
-    public function is_resource_launch()
-    {
+    public function is_resource_launch(): bool {
         return $this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/message_type'] === 'LtiResourceLinkRequest';
     }
 
-    /**
-     * Fetches the decoded body of the JWT used in the current launch.
-     *
-     * @return array|object Returns the decoded json body of the launch as an array.
-     */
-    public function get_launch_data()
-    {
+    public function get_launch_data(): array {
         return $this->jwt['body'];
     }
 
-    /**
-     * Get the unique launch id for the current launch.
-     *
-     * @return string   A unique identifier used to re-reference the current launch in subsequent requests.
-     */
-    public function get_launch_id()
-    {
+    public function get_launch_id(): string {
         return $this->launch_id;
     }
 
-    private function get_public_key(bool $allow_self_signed = false)
-    {
+    private function get_public_key(bool $allow_self_signed = false): mixed {
         $key_set_url = $this->registration->get_key_set_url();
 
         // Download key set
@@ -271,14 +178,13 @@ class LTI_Message_Launch
         throw new LTI_Exception("Unable to find public key", 1);
     }
 
-    private function cache_launch_data()
+    private function cache_launch_data(): self
     {
         $this->cache->cache_launch_data($this->launch_id, $this->jwt['body']);
         return $this;
     }
 
-    private function validate_state(bool $skip_state = false)
-    {
+    private function validate_state(bool $skip_state = false): self {
         // State check bypass
         if ($skip_state) {
             return $this;
@@ -301,8 +207,7 @@ class LTI_Message_Launch
         return $this;
     }
 
-    private function validate_jwt_format()
-    {
+    private function validate_jwt_format(): self {
         // Get id_token; throw exception on missing / empty value.
         $jwt = ($this->request['id_token'] ?? null);
         if (empty($jwt)) {
@@ -324,16 +229,14 @@ class LTI_Message_Launch
         return $this;
     }
 
-    private function validate_nonce()
-    {
+    private function validate_nonce(): self {
         if (!$this->cache->check_nonce($this->jwt['body']['nonce'])) {
             //throw new LTI_Exception("Invalid Nonce");
         }
         return $this;
     }
 
-    private function validate_registration()
-    {
+    private function validate_registration(): self {
         // Find registration.
         $iss = $this->jwt['body']['iss'];
         $this->registration = $this->db->find_registration_by_issuer($iss);
@@ -355,8 +258,7 @@ class LTI_Message_Launch
         return $this;
     }
 
-    private function validate_jwt_signature(bool $allow_self_signed = false)
-    {
+    private function validate_jwt_signature(bool $allow_self_signed = false): self {
         // Fetch public key.
         $public_key = $this->get_public_key($allow_self_signed);
 
@@ -376,8 +278,7 @@ class LTI_Message_Launch
         return $this;
     }
 
-    private function validate_deployment()
-    {
+    private function validate_deployment(): self {
         // Find deployment.
         $deployment = $this->db->find_deployment(
             ($this->jwt['body']['iss'] ?? ''),
@@ -392,8 +293,7 @@ class LTI_Message_Launch
         return $this;
     }
 
-    private function validate_message()
-    {
+    private function validate_message(): self {
         if (empty($this->jwt['body']['https://purl.imsglobal.org/spec/lti/claim/message_type'])) {
             // Unable to identify message type.
             throw new LTI_Exception("Invalid message type", 1);

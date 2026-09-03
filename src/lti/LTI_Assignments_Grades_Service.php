@@ -1,17 +1,19 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
 class LTI_Assignments_Grades_Service {
 
-    private $service_connector;
-    private $service_data;
+    private LTI_Service_Connector $service_connector;
+    private array $service_data;
 
-    public function __construct(LTI_Service_Connector $service_connector, $service_data) {
+    public function __construct(LTI_Service_Connector $service_connector, array $service_data) {
         $this->service_connector = $service_connector;
         $this->service_data = $service_data;
     }
 
-    public function put_grade(LTI_Grade $grade, LTI_Lineitem $lineitem = null) {
+    public function put_grade(LTI_Grade $grade, ?LTI_Lineitem $lineitem = null): array {
         if (!in_array("https://purl.imsglobal.org/spec/lti-ags/scope/score", $this->service_data['scope'])) {
             throw new LTI_Exception('Missing required scope', 1);
         }
@@ -41,7 +43,7 @@ class LTI_Assignments_Grades_Service {
         );
     }
 
-    public function find_or_create_lineitem(LTI_Lineitem $new_line_item) {
+    public function find_or_create_lineitem(LTI_Lineitem $new_line_item): LTI_Lineitem {
         if (!in_array("https://purl.imsglobal.org/spec/lti-ags/scope/lineitem", $this->service_data['scope'])) {
             throw new LTI_Exception('Missing required scope', 1);
         }
@@ -71,7 +73,7 @@ class LTI_Assignments_Grades_Service {
         return new LTI_Lineitem($created_line_item['body']);
     }
 
-    public function get_grades(LTI_Lineitem $lineitem) {
+    public function get_grades(LTI_Lineitem $lineitem): array {
         $lineitem = $this->find_or_create_lineitem($lineitem);
         // Place '/results' before url params
         $pos = strpos($lineitem->get_id(), '?');

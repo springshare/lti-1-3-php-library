@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
 use Firebase\JWT\JWT;
@@ -7,14 +9,14 @@ class LTI_Service_Connector {
 
     const NEXT_PAGE_REGEX = "/^Link:.*<([^>]*)>; ?rel=\"next\"/i";
 
-    private $registration;
-    private $access_tokens = [];
+    private LTI_Registration $registration;
+    private array $access_tokens = [];
 
     public function __construct(LTI_Registration $registration) {
         $this->registration = $registration;
     }
 
-    public function get_access_token($scopes) {
+    public function get_access_token(array $scopes): string {
 
         // Don't fetch the same key more than once.
         sort($scopes);
@@ -60,7 +62,7 @@ class LTI_Service_Connector {
         return $this->access_tokens[$scope_key] = $token_data['access_token'];
     }
 
-    public function make_service_request($scopes, $method, $url, $body = null, $content_type = 'application/json', $accept = 'application/json') {
+    public function make_service_request(array $scopes, string $method, string $url, ?string $body = null, string $content_type = 'application/json', string $accept = 'application/json'): array {
         $ch = curl_init();
         $headers = [
             'Authorization: Bearer ' . $this->get_access_token($scopes),
@@ -91,4 +93,3 @@ class LTI_Service_Connector {
         ];
     }
 }
-?>

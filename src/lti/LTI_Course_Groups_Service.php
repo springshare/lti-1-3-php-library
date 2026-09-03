@@ -1,17 +1,19 @@
 <?php
+declare(strict_types=1);
+
 namespace IMSGlobal\LTI;
 
 class LTI_Course_Groups_Service {
 
-    private $service_connector;
-    private $service_data;
+    private LTI_Service_Connector $service_connector;
+    private array $service_data;
 
-    public function __construct(LTI_Service_Connector $service_connector, $service_data) {
+    public function __construct(LTI_Service_Connector $service_connector, array $service_data) {
         $this->service_connector = $service_connector;
         $this->service_data = $service_data;
     }
 
-    public function get_groups() {
+    public function get_groups(): array {
 
         $groups = [];
 
